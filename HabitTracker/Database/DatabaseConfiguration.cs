@@ -8,6 +8,6 @@ public class DatabaseConfiguration
     
     public DatabaseConfiguration()
     {
-        _connectionString = "Data Source=HabitTracker.db";
+        _connectionString = "Data Source=HabitTracker.db; Foreign Keys=True";
     }
 }

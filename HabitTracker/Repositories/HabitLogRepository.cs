@@ -1,7 +1,7 @@
-﻿using HabitTracker.Models;
-using Microsoft.Data.Sqlite;
+﻿using HabitTracker.Database;
+using HabitTracker.Models;
 
-namespace HabitTracker.Database;
+namespace HabitTracker.Repositories;
 
 public class HabitLogRepository : RepositoryBase
 {
@@ -20,6 +20,24 @@ public class HabitLogRepository : RepositoryBase
         ];
 
         ExecuteCommand(insertHabitLogSql, parameters);
+    }
+    
+    public void BulkCreate(List<HabitLog> habitLogs)
+    {
+        string insertHabitSql = """
+                                INSERT INTO HabitLogs (HabitId, Occurrences, OccurrenceDate)
+                                VALUES (@habitId, @occurrences, @date);
+                                """;
+
+        var parameterSets = habitLogs.Select(habitLog =>
+            new (string Name, object Value)[]
+            {
+                ("@habitId", habitLog.HabitId),
+                ("@occurrences", habitLog.Occurrences),
+                ("@date", habitLog.OccurrenceDate)
+            }).ToArray();
+
+        ExecuteBulkCommand(insertHabitSql, parameterSets);
     }
 
     public List<HabitLog> Read()

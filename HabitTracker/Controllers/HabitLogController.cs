@@ -1,6 +1,7 @@
 ﻿using HabitTracker.Database;
 using HabitTracker.Exceptions;
 using HabitTracker.Models;
+using HabitTracker.Repositories;
 using Spectre.Console;
 
 namespace HabitTracker.Controllers;

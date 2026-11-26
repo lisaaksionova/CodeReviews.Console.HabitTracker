@@ -1,4 +1,6 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using HabitTracker.Database.Fakers;
+using HabitTracker.Repositories;
+using Microsoft.Data.Sqlite;
 
 namespace HabitTracker.Database;
 
@@ -32,5 +34,23 @@ public class DatabaseInitialization : DatabaseConfiguration
         
         using var createHabitLogsTableCommand = new SqliteCommand(createHabitLogsTableSql, connection);
         createHabitLogsTableCommand.ExecuteNonQuery();
+        
+        SeedDatabase();
+    }
+
+    private void SeedDatabase()
+    {
+        var habitRepository = new HabitRepository();
+
+        if (habitRepository.Read().Count > 0)
+            return;
+
+        var generatedHabits = new HabitFaker().Generate(10);
+        habitRepository.BulkCreate(generatedHabits);
+
+        var habits = habitRepository.Read();
+        var habitLogs = new HabitLogFaker(habits).Generate(100);
+
+        new HabitLogRepository().BulkCreate(habitLogs);
     }
 }

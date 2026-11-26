@@ -1,6 +1,7 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using HabitTracker.Database;
+using Microsoft.Data.Sqlite;
 
-namespace HabitTracker.Database;
+namespace HabitTracker.Repositories;
 
 public class RepositoryBase : DatabaseConfiguration
 {
@@ -15,6 +16,32 @@ public class RepositoryBase : DatabaseConfiguration
             command.Parameters.AddWithValue(parameter.Name, parameter.Value);
 
         command.ExecuteNonQuery();
+    }
+
+    public void ExecuteBulkCommand(string sql, (string Name, object Value)[][] parameters)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        connection.Open();
+
+        using var transaction = connection.BeginTransaction();
+        using var command = connection.CreateCommand();
+
+        command.Transaction = transaction;
+        command.CommandText = sql;
+
+        foreach (var parameter in parameters)
+        {
+            command.Parameters.Clear();
+
+            foreach (var (name, value) in parameter)
+            {
+                command.Parameters.AddWithValue(name, value ?? DBNull.Value);
+            }
+
+            command.ExecuteNonQuery();
+        }
+
+        transaction.Commit();
     }
 
     public List<T> ExecuteQuery<T>(string sql, Func<SqliteDataReader, T> map, (string Name, object Value)[]? parameters = null)
