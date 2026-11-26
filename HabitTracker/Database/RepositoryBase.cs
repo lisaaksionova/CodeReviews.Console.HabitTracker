@@ -2,7 +2,7 @@
 
 namespace HabitTracker.Database;
 
-public class SqlBase : DatabaseConfiguration
+public class RepositoryBase : DatabaseConfiguration
 {
     public void ExecuteCommand(string sql, (string Name, object Value)[] parameters)
     {

@@ -3,7 +3,7 @@ using Microsoft.Data.Sqlite;
 
 namespace HabitTracker.Database;
 
-public class HabitLogSql : SqlBase
+public class HabitLogRepository : RepositoryBase
 {
     public void Create(HabitLog habitLog)
     {

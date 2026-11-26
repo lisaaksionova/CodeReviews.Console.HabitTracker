@@ -7,8 +7,8 @@ namespace HabitTracker.Controllers;
 
 public class HabitLogController
 {
-    private readonly HabitLogSql _habitLogSql = new();
-    private readonly HabitSql _habitSql = new();
+    private readonly HabitLogRepository _habitLogRepository = new();
+    private readonly HabitRepository _habitRepository = new();
 
     public void AddHabitLog()
     {
@@ -17,7 +17,7 @@ public class HabitLogController
             HabitId = AnsiConsole.Ask<int>("Enter [green]habit id[/]: ")
         };
 
-        if (_habitLogSql.Read(habitLog.HabitId) is null)
+        if (_habitLogRepository.Read(habitLog.HabitId) is null)
             throw new NotFoundException(nameof(Habit), habitLog.HabitId);
         
         habitLog.Occurrences = AnsiConsole.Ask<int>("Enter [green]occurence count[/]: ");
@@ -29,7 +29,7 @@ public class HabitLogController
                 habitLog.OccurrenceDate, 
                 $"The date must be in the current year ({DateTime.Now.Year}).");
 
-        _habitLogSql.Create(habitLog);
+        _habitLogRepository.Create(habitLog);
     }
 
     public void UpdateHabitLog()
@@ -39,12 +39,12 @@ public class HabitLogController
             Id = AnsiConsole.Ask<int>("Enter [green]id[/]: ")
         };
 
-        if (_habitLogSql.Read(habitLog.Id) is null)
+        if (_habitLogRepository.Read(habitLog.Id) is null)
             throw new NotFoundException(nameof(HabitLog), habitLog.Id);
         
         habitLog.HabitId = AnsiConsole.Ask<int>("Enter [green]habit id[/]: ");
         
-        if (_habitSql.Read(habitLog.HabitId) is null)
+        if (_habitRepository.Read(habitLog.HabitId) is null)
             throw new NotFoundException(nameof(Habit), habitLog.HabitId);
         
         habitLog.Occurrences = AnsiConsole.Ask<int>("Enter [green]occurence count[/]: ");
@@ -57,22 +57,22 @@ public class HabitLogController
                 habitLog.OccurrenceDate, 
                 $"The date must be in the current year ({DateTime.Now.Year}).");
 
-        _habitLogSql.Update(habitLog);
+        _habitLogRepository.Update(habitLog);
     }
 
     public void DeleteHabitLog()
     {
         var id = AnsiConsole.Ask<int>("Enter [green]log id[/]: ");
 
-        if (_habitLogSql.Read(id) is null)
+        if (_habitLogRepository.Read(id) is null)
             throw new NotFoundException(nameof(HabitLog), id);
 
-        _habitLogSql.Delete(id);
+        _habitLogRepository.Delete(id);
     }
 
     public void ListHabitLogs()
     {
-        var habitLogs = _habitLogSql.Read();
+        var habitLogs = _habitLogRepository.Read();
         
         var table = new Table();
         table.AddColumn("ID");
