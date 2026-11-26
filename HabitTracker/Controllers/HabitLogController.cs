@@ -1,102 +1,91 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using HabitTracker.Database;
+using HabitTracker.Exceptions;
+using HabitTracker.Models;
 using Spectre.Console;
 
 namespace HabitTracker.Controllers;
 
 public class HabitLogController
 {
-    private readonly string _connectionString = "Data Source=HabitTracker.db";
+    private readonly HabitLogSql _habitLogSql = new();
+    private readonly HabitSql _habitSql = new();
 
     public void AddHabitLog()
     {
-        using var connection = new SqliteConnection(_connectionString);
-        connection.Open();
+        var habitLog = new HabitLog
+        {
+            HabitId = AnsiConsole.Ask<int>("Enter [green]habit id[/]: ")
+        };
 
-        var habitId = AnsiConsole.Ask<int>("Enter [green]habit id[/]: ");
-        var occurrences = AnsiConsole.Ask<int>("Enter [green]occurence count[/]: ");
-        var date = AnsiConsole.Ask<string>("Enter [green]date[/] int format 'dd-mm-yyyy': ");
+        if (_habitLogSql.Read(habitLog.HabitId) is null)
+            throw new NotFoundException(nameof(Habit), habitLog.HabitId);
+        
+        habitLog.Occurrences = AnsiConsole.Ask<int>("Enter [green]occurence count[/]: ");
+        habitLog.OccurrenceDate = AnsiConsole.Ask<DateOnly>("Enter [green]date[/] int format 'yyyy-mm-dd': ");
+        
+        if(habitLog.OccurrenceDate.Year != DateTime.Now.Year)
+            throw new ArgumentOutOfRangeException(
+                nameof(habitLog.OccurrenceDate), 
+                habitLog.OccurrenceDate, 
+                $"The date must be in the current year ({DateTime.Now.Year}).");
 
-        string insertHabitLogSql = """
-                                  INSERT INTO HabitLogs (HabitId, Occurrences, OccurrenceDate)
-                                  VALUES (@habitId, @occurrences, @date);
-                                  """;
-        using var command = new SqliteCommand(insertHabitLogSql, connection);
-        command.Parameters.AddWithValue("@habitId", habitId);
-        command.Parameters.AddWithValue("@occurrences", occurrences);
-        command.Parameters.AddWithValue("@date", date);
-
-        command.ExecuteNonQuery();
+        _habitLogSql.Create(habitLog);
     }
 
     public void UpdateHabitLog()
     {
-        using var connection = new SqliteConnection(_connectionString);
-        connection.Open();
+        var habitLog = new HabitLog
+        {
+            Id = AnsiConsole.Ask<int>("Enter [green]id[/]: ")
+        };
+
+        if (_habitLogSql.Read(habitLog.Id) is null)
+            throw new NotFoundException(nameof(HabitLog), habitLog.Id);
         
-        var id = AnsiConsole.Ask<int>("Enter [green]log id[/]: ");
-        var habitId = AnsiConsole.Ask<int>("Enter [green]habit id[/]: ");
-        var occurrences = AnsiConsole.Ask<int>("Enter [green]occurence count[/]: ");
-        var date = AnsiConsole.Ask<string>("Enter [green]date[/] int format 'dd-mm-yyyy': ");
+        habitLog.HabitId = AnsiConsole.Ask<int>("Enter [green]habit id[/]: ");
+        
+        if (_habitSql.Read(habitLog.HabitId) is null)
+            throw new NotFoundException(nameof(Habit), habitLog.HabitId);
+        
+        habitLog.Occurrences = AnsiConsole.Ask<int>("Enter [green]occurence count[/]: ");
+        
+        var date = habitLog.OccurrenceDate = AnsiConsole.Ask<DateOnly>("Enter [green]date[/] int format 'yyyy-mm-dd': ");
+        var now = DateTime.Now;
+        if(date.Year != now.Year)
+            throw new ArgumentOutOfRangeException(
+                nameof(habitLog.OccurrenceDate), 
+                habitLog.OccurrenceDate, 
+                $"The date must be in the current year ({DateTime.Now.Year}).");
 
-        string updateHabitLogSql = """
-                                  UPDATE HabitLogs
-                                  SET HabitId = @habitId, Occurrences = @occurrences, OccurrenceDate = @date
-                                  WHERE Id = @id;
-                                  """;
-        using var command = new SqliteCommand(updateHabitLogSql, connection);
-        command.Parameters.AddWithValue("@id", id);
-        command.Parameters.AddWithValue("@habitId", habitId);
-        command.Parameters.AddWithValue("@occurrences", occurrences);
-        command.Parameters.AddWithValue("@date", date);
-
-        command.ExecuteNonQuery();
+        _habitLogSql.Update(habitLog);
     }
 
     public void DeleteHabitLog()
     {
-        using var connection = new SqliteConnection(_connectionString);
-        connection.Open();
-        
         var id = AnsiConsole.Ask<int>("Enter [green]log id[/]: ");
 
-        string deleteHabitLogSql = """
-                                  DELETE FROM HabitLogs
-                                  WHERE Id = @id;
-                                  """;
-        using var command = new SqliteCommand(deleteHabitLogSql, connection);
-        command.Parameters.AddWithValue("@id", id);
-        
-        command.ExecuteNonQuery();
+        if (_habitLogSql.Read(id) is null)
+            throw new NotFoundException(nameof(HabitLog), id);
+
+        _habitLogSql.Delete(id);
     }
 
     public void ListHabitLogs()
     {
-        using var connection = new SqliteConnection(_connectionString);
-        connection.Open();
-
-        string selectHabitLogs = """
-                                 SELECT * FROM HabitLogs;
-                                 """;
-        using var command = new SqliteCommand(selectHabitLogs, connection);
-        using var reader = command.ExecuteReader();
+        var habitLogs = _habitLogSql.Read();
         
         var table = new Table();
         table.AddColumn("ID");
         table.AddColumn("HabitId");
         table.AddColumn("Occurrences");
         table.AddColumn("OccurenceDate");
-        
-        if(reader.HasRows)
-            while (reader.Read())
-            {
-                var id = reader.GetString(0);
-                var habitId = reader.GetString(1);
-                var occurrences = reader.GetString(2);
-                var occurenceDate = reader.GetString(3);
 
-                table.AddRow(id, habitId, occurrences, occurenceDate);
-            }
+        foreach (var habitLog in habitLogs)
+        {
+            table.AddRow(habitLog.Id.ToString(), habitLog.HabitId.ToString(), habitLog.Occurrences.ToString(),
+                habitLog.OccurrenceDate.ToString());
+        }
+        
         AnsiConsole.Write(table);
-        Console.ReadKey();
     }
 }

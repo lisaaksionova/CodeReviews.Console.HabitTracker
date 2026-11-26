@@ -1,8 +1,8 @@
 ﻿using HabitTracker;
 using HabitTracker.Database;
 
-DatabaseConfiguration dbConfig = new DatabaseConfiguration();
-dbConfig.CreateDatabase();
+DatabaseInitialization dbInit = new DatabaseInitialization();
+dbInit.CreateDatabase();
 
 UserInterface userInterface = new UserInterface();
 userInterface.MainMenu();
